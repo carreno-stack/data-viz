@@ -10,6 +10,10 @@
 <!-- Add 2 buttons -->
 <title>Covid cases in the World and in the U.S.</title>
 <body>
+<h2 style="color:rgb(100, 100, 100)">COVID-19 World Vaccination Progress Visualization - Pfizer/BioNTech</h2>
+
+<table border="1" cellspacing="0" cellpadding="4">
+<tr> <td>
 <h2 id="covid_phase">First phase: The beginning of the pandemic, first half of 2020</h2>
 <button id="global" onclick="update('Current','Global')" style="background-color:rgb(239, 239, 239)">Global</button> <!--style="background-color: #555555; color: #FFFFFF"-->
 <button id="us" onclick="update('Current','USA')" style="background-color:rgb(239, 239, 239)">U.S.</button>
@@ -22,6 +26,10 @@
 <!-- Create a div where the graph will take place -->
 <div id="my_dataviz"></div>
 
+<p>This is visualization was created by Diego Carreno as a final project for the Data Visualization class CS 416 at UIUC. It shows the evolution of Covid cases around the world together with the parallel</br>development and rollout of a Covid-19 vaccine, in this case the Pfizer/BioNTech vaccine.</p>
+<p>Data obtained from <a href="https://www.kaggle.com/fedesoriano/coronavirus-covid19-vaccinations-data" target="_blank">kaggle.</a></p>
+</td> </tr>
+</table>
 <script>
 
 
@@ -96,8 +104,8 @@ num_ex += 1;
 d3.csv("https://raw.githubusercontent.com/carreno-stack/data-viz/main/covid_viz.csv",
  function(d){
     return { date : d3.timeParse("%m/%d/%Y")(d.date),
-    		 new_cases : region == 'Global' ? +d.new_cases_global : +d.new_cases_usa,
-	         new_deaths : region == 'Global' ? +d.new_deaths_global : +d.new_deaths_usa,
+    	 new_cases : region == 'Global' ? +d.new_cases_global : +d.new_cases_usa,
+	     new_deaths : region == 'Global' ? +d.new_deaths_global : +d.new_deaths_usa,
 			 new_tests : region == 'Global' ? +d.new_tests_global : +d.new_tests_usa,
 			 total_vaccinations : region == 'Global' ? +d.total_vaccinations_global : +d.total_vaccinations_usa,
 			 people_vaccinated : region == 'Global' ? +d.people_vaccinated_global : +d.people_vaccinated_usa,
@@ -124,22 +132,22 @@ d3.csv("https://raw.githubusercontent.com/carreno-stack/data-viz/main/covid_viz.
 
   	switch(scene_no){
   		case 1:
-	  		d3.select("h2").text("First phase: The beginning of the pandemic, first half of 2020")
+	  		d3.select("#covid_phase").text("First phase: The beginning of the pandemic, first half of 2020")
 	  		d3.select("#previous").style("background-color", "rgb(255, 255, 255)").style("border-color","rgb(240, 240, 240)").style("color","rgb(240, 240, 240)")
 	  		d3.select("#next").style("background-color", "rgb(239, 239, 239)").style("border-color","rgb(0, 0, 0)").style("color","rgb(0, 0, 0)")
 	  		break;
   		case 2:
-  			d3.select("h2").text("Second phase: Global spike and first vaccinations, second half of 2020")
+  			d3.select("#covid_phase").text("Second phase: Global spike and first vaccinations, second half of 2020")
   			d3.select("#previous").style("background-color", "rgb(239, 239, 239)").style("border-color","rgb(0, 0, 0)").style("color","rgb(0, 0, 0)")
   			d3.select("#next").style("background-color", "rgb(239, 239, 239)").style("border-color","rgb(0, 0, 0)").style("color","rgb(0, 0, 0)")
 	  		break;
   		case 3:
-  			d3.select("h2").text("Third phase: Vaccine release and second spike, first half of 2021")
+  			d3.select("#covid_phase").text("Third phase: Vaccine release and second spike, first half of 2021")
   			d3.select("#previous").style("background-color", "rgb(239, 239, 239)").style("border-color","rgb(0, 0, 0)").style("color","rgb(0, 0, 0)")
   			d3.select("#next").style("background-color", "rgb(255, 255, 255)").style("border-color","rgb(240, 240, 240)").style("color","rgb(240, 240, 240)")
 	  		break;
   		default:
-	  		d3.select("h2").text("First phase: The beginning of the pandemic, first half of 2020")
+	  		d3.select("#covid_phase").text("First phase: The beginning of the pandemic, first half of 2020")
 
   	}
 
@@ -675,6 +683,8 @@ d3.csv("https://raw.githubusercontent.com/carreno-stack/data-viz/main/covid_viz.
       .attr("cx", x(selectedData.date))
       .attr("cy", yleft(selectedData.new_cases_7day_average))
     focusTextCases
+      //.style("left",x(selectedData.date) - (d3.mouse(this)[0] < 900 ? 5 : 200))
+      //.style("top",yleft(selectedData.new_cases_7day_average) - 20)
       .html("New cases: " + selectedData.new_cases_7day_average + " Date: " + formatTime(selectedData.date))
       .attr("x", x(selectedData.date) - (d3.mouse(this)[0] < 900 ? 5 : 200))
       .attr("y", yleft(selectedData.new_cases_7day_average) - 20)
