@@ -1,17 +1,37 @@
-<html>
-<script src='https://d3js.org/d3.v5.min.js'></script>
-<style> circle {fill: lightblue; stroke: black;} </style>
-<body onload='init()'>
-<div id="dataviz"></div>
-</svg>
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<!-- Load d3.js -->
+<script src="https://d3js.org/d3.v4.js"></script>
+
+<!-- Load d3-annotation -->
+<script src="https://rawgit.com/susielu/d3-annotation/master/d3-annotation.min.js"></script>
+
+<!-- Add 2 buttons -->
+<title>Covid cases in the World and in the U.S.</title>
+<body>
+<h2 id="covid_phase">First phase: The beginning of the pandemic, first half of 2020</h2>
+<button id="global" onclick="update('Current','Global')" style="background-color:rgb(239, 239, 239)">Global</button> <!--style="background-color: #555555; color: #FFFFFF"-->
+<button id="us" onclick="update('Current','USA')" style="background-color:rgb(239, 239, 239)">U.S.</button>
+<button id="previous" onclick="update('Previous')" style="background-color:rgb(255, 255, 255); border-color:rgb(240, 240, 240); color:rgb(240, 240, 240)">Previous phase</button>
+<button id="next" onclick="update('Next')" style="background-color:rgb(239, 239, 239)">Next phase</button>
+<h3 id="region">Region: Global</h3>
+
+<p></p>
+
+<!-- Create a div where the graph will take place -->
+<div id="my_dataviz"></div>
+
 <script>
+
+
 // set the dimensions and margins of the graph
-var margin = {top: 15, right: 15, bottom: 15, left: 15},
-    width = 500 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom;
+var margin = {top: 30, right: 100, bottom: 30, left: 100},
+    width = 1300 - margin.left - margin.right,
+    height = 400 - margin.top - margin.bottom;
 
 // append the svg object to the body of the page
-var svg = d3.select("#dataviz")
+var svg = d3.select("#my_dataviz")
   .append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
@@ -19,43 +39,666 @@ var svg = d3.select("#dataviz")
     .attr("transform",
           "translate(" + margin.left + "," + margin.top + ")");
 
-//Read the data
-d3.csv("https://raw.githubusercontent.com/carreno-stack/data-viz/main/covid_viz.csv")
-  
-// When reading the csv, I must format variables:
-  function(d){
-    return { date : d3.timeParse("%Y-%m-%d")(d.date), new_cases_smoothed_per_million : d.new_cases_smoothed_per_million }
+// Initialise the X axis:
+var x = d3.scaleTime().range([0,width]);
+var xAxis = d3.axisBottom().scale(x);
+svg.append("g")
+  .attr("transform", "translate(0," + height + ")")
+  .attr("class","myXaxis")
+
+// Initialize the first Y axis
+var yleft = d3.scaleLinear().range([height, 0]);
+var yAxisleft = d3.axisLeft().scale(yleft);
+svg.append("g")
+  .attr("class","myYaxisleft")
+
+// Initialize the second Y axis
+var yright = d3.scaleLinear().range([height, 0]);
+var yAxisright = d3.axisRight().scale(yright);
+svg.append("g")
+  .attr("class","myYaxisright")
+
+//Labeling the axis
+  	svg.append("text")
+    .attr("class", "x label")
+    .attr("text-anchor", "end")
+    .attr("x", width + 10)
+    .attr("y", height + 25)
+    .text("Date");
+
+    svg.append("text")
+    .attr("class", "y label")
+    .attr("text-anchor", "end")
+    .attr("y", -80)
+    .attr("dy", ".75em")
+    .attr("transform", "rotate(-90)")
+    .text("New cases");
+
+    svg.append("text")
+    .attr("class", "y label")
+    .attr("text-anchor", "end")
+    .attr("y", width + 80)
+    .attr("dy", ".75em")
+    .attr("transform", "rotate(-90)")
+    .text("New vaccines");
+
+latest_region = "Global";
+scene_no = 1;
+num_ex = 0;
+
+
+// Create a function that takes a dataset as input and update the plot:
+function update(scene, region = latest_region) {
+region_change = region != latest_region;
+latest_region = region;
+d3.select("#region").text("Region: " + (region == "Global" ? "Global" : "U.S.") )
+num_ex += 1;
+d3.csv("https://raw.githubusercontent.com/carreno-stack/data-viz/main/covid_viz.csv",
+ function(d){
+    return { date : d3.timeParse("%m/%d/%Y")(d.date),
+    		 new_cases : region == 'Global' ? +d.new_cases_global : +d.new_cases_usa,
+	         new_deaths : region == 'Global' ? +d.new_deaths_global : +d.new_deaths_usa,
+			 new_tests : region == 'Global' ? +d.new_tests_global : +d.new_tests_usa,
+			 total_vaccinations : region == 'Global' ? +d.total_vaccinations_global : +d.total_vaccinations_usa,
+			 people_vaccinated : region == 'Global' ? +d.people_vaccinated_global : +d.people_vaccinated_usa,
+			 people_fully_vaccinated : region == 'Global' ? +d.people_fully_vaccinated_global : +d.people_fully_vaccinated_usa,
+			 new_vaccinations : region == 'Global' ? +d.new_vaccinations_global : +d.new_vaccinations_usa,
+			 new_cases_7day_average : region == 'Global' ? +d.new_cases_7day_average_global : +d.new_cases_7day_average_usa,
+			 new_deaths_7day_average : region == 'Global' ? +d.new_deaths_7day_average_global : +d.new_deaths_7day_average_usa,
+			 new_tests_7day_average : region == 'Global' ? +d.new_tests_7day_average_global : +d.new_tests_7day_average_usa,
+			 total_vaccinations_7day_average : region == 'Global' ? +d.total_vaccinations_7day_average_global : +d.total_vaccinations_7day_average_usa,
+			 people_vaccinated_7day_average : region == 'Global' ? +d.people_vaccinated_7day_average_global : +d.people_vaccinated_7day_average_usa,
+			 people_fully_vaccinated_7day_average : region == 'Global' ? +d.people_fully_vaccinated_7day_average_global : +d.people_fully_vaccinated_7day_average_usa,
+			 new_vaccinations_7day_average : region == 'Global' ? +d.new_vaccinations_7day_average_global : +d.new_vaccinations_7day_average_usa,
+			 slide : +d.slide
+    		}
   },
-// Now I can use this dataset:
-  function(data) {
+  function(data){
+  	if(scene_no < 3 && scene=="Next"){
+  		scene_no += 1;
+  	}
 
-    // Add X axis --> it is a date format
-    var x = d3.scaleTime()
-      .domain(d3.extent(data, function(d) { return d.date; }))
-      .range([ 0, width ]);
-    svg.append("g")
-      .attr("transform", "translate(0," + height + ")")
-      .call(d3.axisBottom(x));
+  	if(scene_no > 1 && scene=="Previous"){
+  		scene_no -= 1;
+  	}
 
-    // Add Y axis
-    var y = d3.scaleLinear()
-      .domain([0, d3.max(data, function(d) { return +d.new_cases_smoothed_per_million; })])
-      .range([ height, 0 ]);
-    svg.append("g")
-      .call(d3.axisLeft(y));
+  	switch(scene_no){
+  		case 1:
+	  		d3.select("h2").text("First phase: The beginning of the pandemic, first half of 2020")
+	  		d3.select("#previous").style("background-color", "rgb(255, 255, 255)").style("border-color","rgb(240, 240, 240)").style("color","rgb(240, 240, 240)")
+	  		d3.select("#next").style("background-color", "rgb(239, 239, 239)").style("border-color","rgb(0, 0, 0)").style("color","rgb(0, 0, 0)")
+	  		break;
+  		case 2:
+  			d3.select("h2").text("Second phase: Global spike and first vaccinations, second half of 2020")
+  			d3.select("#previous").style("background-color", "rgb(239, 239, 239)").style("border-color","rgb(0, 0, 0)").style("color","rgb(0, 0, 0)")
+  			d3.select("#next").style("background-color", "rgb(239, 239, 239)").style("border-color","rgb(0, 0, 0)").style("color","rgb(0, 0, 0)")
+	  		break;
+  		case 3:
+  			d3.select("h2").text("Third phase: Vaccine release and second spike, first half of 2021")
+  			d3.select("#previous").style("background-color", "rgb(239, 239, 239)").style("border-color","rgb(0, 0, 0)").style("color","rgb(0, 0, 0)")
+  			d3.select("#next").style("background-color", "rgb(255, 255, 255)").style("border-color","rgb(240, 240, 240)").style("color","rgb(240, 240, 240)")
+	  		break;
+  		default:
+	  		d3.select("h2").text("First phase: The beginning of the pandemic, first half of 2020")
 
-    // Add the line
-    svg.append("path")
-      .datum(data)
+  	}
+
+  	data=data.filter(function(row){
+  		return row['slide'] == scene_no;
+  	})
+
+
+    // Transition is turned off when the trigger is an intended change in scene and not in region
+    if((scene=="Next" || scene=="Previous")|| num_ex==1){
+  	//Creating the X axis
+  	x.domain(d3.extent(data, function(d) { return d.date; }));
+    svg.selectAll(".myXaxis")
+    //.transition()
+    //.duration(3000)
+    .call(xAxis.ticks(d3.timeMonth,1).tickFormat(d3.timeFormat('%b %y')));
+
+    //Creating the first Y axis, with cases
+    yleft.domain([0, d3.max(data, function(d) { return d.new_cases_7day_average  }) ]);
+    svg.selectAll(".myYaxisleft")
+    .attr("stroke","steelblue")
+    //.transition()
+    //.duration(3000)
+    .call(yAxisleft);
+
+    //Creating the second Y axis, with vaccines
+    yright.domain([0, scene_no == 1 && region == "Global" ? 2086488 : scene_no == 1 && region == "USA" ? 8273 : d3.max(data, function(d) { return d.new_vaccinations_7day_average })]);
+  	svg.selectAll(".myYaxisright")
+    .attr("transform", "translate( " + width + ", 0 )")
+    .attr("stroke","darkorange")
+    //.transition()
+    //.duration(3000)
+    .call(yAxisright);}
+    
+    else
+    {
+    //Creating the X axis
+  	x.domain(d3.extent(data, function(d) { return d.date; }));
+    svg.selectAll(".myXaxis")
+    .transition()
+    .duration(3000)
+    .call(xAxis.ticks(d3.timeMonth,1).tickFormat(d3.timeFormat('%b %y')));
+
+    //Creating the first Y axis, with cases
+    yleft.domain([0, d3.max(data, function(d) { return d.new_cases_7day_average  }) ]);
+    svg.selectAll(".myYaxisleft")
+    .attr("stroke","steelblue")
+    .transition()
+    .duration(3000)
+    .call(yAxisleft);
+
+    //Creating the second Y axis, with vaccines
+    yright.domain([0, scene_no == 1 && region == "Global" ? 2086488 : scene_no == 1 && region == "USA" ? 8273 : d3.max(data, function(d) { return d.new_vaccinations_7day_average })]);
+	svg.selectAll(".myYaxisright")
+    .attr("transform", "translate( " + width + ", 0 )")
+    .attr("stroke","darkorange")
+    .transition()
+    .duration(3000)
+    .call(yAxisright);
+
+
+    }
+
+  //Adding annotations
+  //console.log(scene_no)
+  //if(scene!="Current" || scene_no == 1){
+  d3.selectAll(".annotation-group").remove();
+
+  switch(scene_no){
+  case 1:
+      // Features of the first annotation
+      const tParser = d3.timeParse("%m/%d/%Y")
+      const annotation_1 = [
+      {
+        note: {
+          label: "Jan 11th, Scientists release genetic code of SARS‑CoV‑2",
+          title: "Coronavirus genetic code released"
+        },
+        x: x(tParser("1/11/20")),
+        y: height,
+        dy: -150,
+        dx: 100
+       }
+      ]
+      // Add annotation to the chart
+      const makeAnnotations1 = d3.annotation().annotations(annotation_1)
+      svg
+       .append("g")
+       .attr("class", "annotation-group")
+       .call(makeAnnotations1)
+       .attr("opacity",0)
+
+
+      if(region=="Global"){ //Adding logic to place second annotation differently for the U.S. region to avoid overlap with the graph
+
+      // Features of the second annotation
+      const tParser2 = d3.timeParse("%m/%d/%Y")
+      const annotation_2 = [
+      {
+        note: {
+          label: "May 5th, Phase 1/2 trial begins",
+          title: "Pfizer vaccine trials begin"
+        },
+        x: x(tParser2("5/5/20")),
+        y: height,
+        dy: -250,
+        dx: -100
+       }
+      ]
+      // Add annotation to the chart
+      const makeAnnotations2 = d3.annotation().annotations(annotation_2)
+      svg
+       .append("g")
+       .attr("class", "annotation-group")
+       .call(makeAnnotations2)
+       .attr("opacity",0)}else{
+
+      // Features of the second annotation
+      const tParser2 = d3.timeParse("%m/%d/%Y")
+      const annotation_2 = [
+      {
+        note: {
+          label: "May 5th, Phase 1/2 trial begins",
+          title: "Pfizer vaccine trials begin"
+        },
+        x: x(tParser2("5/5/20")),
+        y: height,
+        dy: -100,
+        dx: -100
+       }
+      ]
+      // Add annotation to the chart
+      const makeAnnotations2 = d3.annotation().annotations(annotation_2)
+      svg
+       .append("g")
+       .attr("class", "annotation-group")
+       .call(makeAnnotations2)
+       .attr("opacity",0)
+
+       }
+
+       break;
+
+
+
+    case 2:
+
+    if(region=="Global"){
+
+      // Features of the third annotation
+      const tParser3 = d3.timeParse("%m/%d/%Y")
+      const annotation_3 = [
+      {
+        note: {
+          label: "Jul 28th, Phase 3 trial begins",
+          title: "Next development phase of the Pfizer vaccine"
+        },
+        x: x(tParser3("7/28/20")),
+        y: height,
+        dy: -180,
+        dx: 100
+       }
+      ]
+      // Add annotation to the chart
+      const makeAnnotations3 = d3.annotation().annotations(annotation_3)
+      svg
+       .append("g")
+       .attr("class", "annotation-group")
+       .call(makeAnnotations3)
+       .attr("opacity",0)
+
+      // Features of the fourth annotation
+      const tParser4 = d3.timeParse("%m/%d/%Y")
+      const annotation_4 = [
+      {
+        note: {
+          label: "Nov 28th, Results show 95% efficacy",
+          title: "Phase 3 complete"
+        },
+        x: x(tParser4("11/28/20")),
+        y: height,
+        dy: -80,
+        dx: -100
+       }
+      ]
+      // Add annotation to the chart
+      const makeAnnotations4 = d3.annotation().annotations(annotation_4)
+      svg
+       .append("g")
+       .attr("class", "annotation-group")
+       .call(makeAnnotations4)
+       .attr("opacity",0)
+
+      //Only add fith annotation for the global region
+
+      // Features of the fifth annotation
+      const tParser5 = d3.timeParse("%m/%d/%Y")
+      //var x_coord = data.filter(function(row){return row['date'] == tParser5("12/13/20");}) 
+      //console.log()
+
+      const annotation_5 = [
+      {
+        note: {
+          label: "Dec 20', First vaccines are rolled out globally",
+          title: "Pfizer vaccine begins global rollout"
+        },
+        x: x(tParser5("12/13/20")),
+        y: yright(data[165].new_vaccinations_7day_average),
+        dy: -140,
+        dx: -50
+       }
+      ]
+      // Add annotation to the chart
+      const makeAnnotations5 = d3.annotation().annotations(annotation_5)
+      svg
+       .append("g")
+       .attr("class", "annotation-group")
+       .call(makeAnnotations5)
+       .attr("opacity",0)}
+       else{
+       // Features of the third annotation
+      const tParser3 = d3.timeParse("%m/%d/%Y")
+      const annotation_3 = [
+      {
+        note: {
+          label: "Jul 28th, Phase 3 trial begins",
+          title: "Next development phase of the Pfizer vaccine"
+        },
+        x: x(tParser3("7/28/20")),
+        y: height,
+        dy: -180,
+        dx: 100
+       }
+      ]
+      // Add annotation to the chart
+      const makeAnnotations3 = d3.annotation().annotations(annotation_3)
+      svg
+       .append("g")
+       .attr("class", "annotation-group")
+       .call(makeAnnotations3)
+       .attr("opacity",0)
+
+      // Features of the fourth annotation
+      const tParser4 = d3.timeParse("%m/%d/%Y")
+      const annotation_4 = [
+      {
+        note: {
+          label: "Nov 28th, Results show 95% efficacy",
+          title: "Phase 3 complete"
+        },
+        x: x(tParser4("11/28/20")),
+        y: height,
+        dy: -250,
+        dx: -100
+       }
+      ]
+      // Add annotation to the chart
+      const makeAnnotations4 = d3.annotation().annotations(annotation_4)
+      svg
+       .append("g")
+       .attr("class", "annotation-group")
+       .call(makeAnnotations4)
+       .attr("opacity",0)
+
+       }
+
+
+       break;
+
+
+
+    break;
+    case 3:
+      if(region=="Global"){
+      // Features of the sixth annotation
+      const tParser6 = d3.timeParse("%m/%d/%Y")
+      //var x_coord = data.filter(function(row){return row['date'] == tParser5("12/13/20");}) 
+      //console.log()
+        const annotation_6 = [
+      {
+        note: {
+          label: "Jun 27th, Peak of new vaccines applied globally",
+          title: "Global new vaccines peak"
+        },
+        x: x(tParser6("6/27/21")),
+        y: yright(data[177].new_vaccinations_7day_average),
+        dy: 230,
+        dx: -50
+       }
+      ]
+      // Add annotation to the chart
+      const makeAnnotations6 = d3.annotation().annotations(annotation_6)
+      svg
+       .append("g")
+       .attr("class", "annotation-group")
+       .call(makeAnnotations6)
+       .attr("opacity",0)
+
+
+       // Features of the seventh annotation
+       const tParser7 = d3.timeParse("%m/%d/%Y")
+       const annotation_7 = [
+      {
+        note: {
+          label: "Apr 25th, Peak of new global cases",
+          title: "Global new cases peak"
+        },
+        x: x(tParser7("4/25/21")),
+        y: yleft(data[114].new_cases_7day_average),
+        dy: 20,
+        dx: -220
+       }
+      ]
+      // Add annotation to the chart
+      const makeAnnotations7 = d3.annotation().annotations(annotation_7)
+      svg
+       .append("g")
+       .attr("class", "annotation-group")
+       .call(makeAnnotations7)
+       .attr("opacity",0)
+
+
+
+
+      }else{
+
+        // Features of the eigthth annotation
+      const tParser8 = d3.timeParse("%m/%d/%Y")
+      //var x_coord = data.filter(function(row){return row['date'] == tParser5("12/13/20");}) 
+      //console.log()
+        const annotation_8 = [
+      {
+        note: {
+          label: "Apr 13th, Peak of new vaccines applied in the U.S.",
+          title: "U.S. new vaccines peak"
+        },
+        x: x(tParser8("4/13/21")),
+        y: yright(data[102].new_vaccinations_7day_average),
+        dy: 10,
+        dx: -230
+       }
+      ]
+      // Add annotation to the chart
+      const makeAnnotations8 = d3.annotation().annotations(annotation_8)
+      svg
+       .append("g")
+       .attr("class", "annotation-group")
+       .call(makeAnnotations8)
+       .attr("opacity",0)
+
+
+       // Features of the nineth annotation
+       const tParser9 = d3.timeParse("%m/%d/%Y")
+      console.log(data[7].date)
+      const annotation_9 = [
+      {
+        note: {
+          label: "Jan 8th, Peak of new global cases",
+          title: "U.S. new cases peak"
+        },
+        x: x(tParser9("1/8/21")),
+        y: yleft(data[7].new_cases_7day_average),
+        dy: 255,
+        dx: 130
+       }
+      ]
+      // Add annotation to the chart
+      const makeAnnotations9 = d3.annotation().annotations(annotation_9)
+      svg
+       .append("g")
+       .attr("class", "annotation-group")
+       .call(makeAnnotations9)
+       .attr("opacity",0)
+
+      }
+
+
+
+    break;
+    default:
+    break;
+   }
+   d3.selectAll(".annotation-group").transition().duration(region_change ? 3000 : 0).attr("opacity",1)
+
+
+
+
+
+    // Finding the closest X index of the mouse
+    var bisect = d3.bisector(function(d) { return d.date; }).left;
+
+    //Create the circle that travels along the curve of cases chart
+    var focusCases = svg
+    .append('g')
+    .append('circle')
+      .style("fill", "steelblue")
+      .attr("stroke", "steelblue")
+      .attr('r', 4)
+      .style("opacity", 0)
+
+    // Create the text that travels along the curve of cases chart
+    var focusTextCases = svg
+    .append('g')
+    .append('text')
+      .style("opacity", 0)
+      .attr("text-anchor", "left")
+      .attr("alignment-baseline", "middle")
+
+    //Create the circle that travels along the curve of cases chart
+    var focusVaccines = svg
+    .append('g')
+    .append('circle')
+      .style("fill", "darkorange")
+      .attr("stroke", "darkorange")
+      .attr('r', 4)
+      .style("opacity", 0)
+
+    // Create the text that travels along the curve of cases chart
+    var focusTextVaccines = svg
+    .append('g')
+    .append('text')
+      .style("opacity", 0)
+      .attr("text-anchor", "left")
+      .attr("alignment-baseline", "middle")
+
+
+     // Create a update selection: bind to the new data (vaccines)
+	 var v = svg.selectAll(".lineVaccines")
+     .data([data], function(d){ return d.new_vaccinations_7day_average });
+
+
+    // Create a update selection: bind to the new data (cases)
+	 var u = svg.selectAll(".lineCases")
+     .data([data], function(d){ return d.new_cases_7day_average });
+
+    
+
+     // Transition is turned off when the trigger is an intended change in scene and not in region
+     if((scene=="Next" || scene=="Previous")||num_ex==1){
+     	
+
+    // Update the vaccines line
+    v
+    .enter()
+    .append("path")
+    .attr("class","lineVaccines")
+    .merge(v)
+    //.transition()
+    //.duration(3000)
+    .attr("d", d3.line()
+      .x(function(d) { return x(d.date); })
+      .y(function(d) { return yright(d.new_vaccinations_7day_average); }))
+      .attr("fill", "none")
+      .attr("stroke", "darkorange")
+      .attr("stroke-width", 2.5)
+
+    // Update the cases line
+    u
+    .enter()
+    .append("path")
+    .attr("class","lineCases")
+    .merge(u)
+    //.transition()
+    //.duration(3000)
+    .attr("d", d3.line()
+      .x(function(d) { return x(d.date); })
+      .y(function(d) { return yleft(d.new_cases_7day_average); }))
       .attr("fill", "none")
       .attr("stroke", "steelblue")
-      .attr("stroke-width", 1.5)
-      .attr("d", d3.line()
-        .x(function(d) { return x(d.date) })
-        .y(function(d) { return y(d.new_cases_smoothed_per_million) })
-        )
+      .attr("stroke-width", 2.5)
 
-})
+
+     } else {
+    // Update the vaccines line
+    v
+    .enter()
+    .append("path")
+    .attr("class","lineVaccines")
+    .merge(v)
+    .transition()
+    .duration(3000)
+    .attr("d", d3.line()
+      .x(function(d) { return x(d.date); })
+      .y(function(d) { return yright(d.new_vaccinations_7day_average); }))
+      .attr("fill", "none")
+      .attr("stroke", "darkorange")
+      .attr("stroke-width", 2.5)
+
+    // Update the cases line
+    u
+    .enter()
+    .append("path")
+    .attr("class","lineCases")
+    .merge(u)
+    .transition()
+    .duration(3000)
+    .attr("d", d3.line()
+      .x(function(d) { return x(d.date); })
+      .y(function(d) { return yleft(d.new_cases_7day_average); }))
+      .attr("fill", "none")
+      .attr("stroke", "steelblue")
+      .attr("stroke-width", 2.5)
+
+     }
+
+    // Create a rect on top of the svg area: this rectangle recovers mouse position
+    svg
+    .append('rect')
+    .style("fill", "none")
+    .style("pointer-events", "all")
+    .attr('width', width)
+    .attr('height', height)
+    .on('mouseover', mouseover)
+    .on('mousemove', mousemove)
+    .on('mouseout', mouseout);
+
+    // What happens when the mouse move -> show the annotations at the right positions.
+    function mouseover() {
+    focusCases.style("opacity", 1)
+    focusTextCases.style("opacity",1)
+    focusVaccines.style("opacity", 1)
+    focusTextVaccines.style("opacity",1)
+  }
+
+    function mousemove() {
+    // recover coordinate we need
+    var x0 = x.invert(d3.mouse(this)[0]);
+    var i = bisect(data, x0, 1);
+    //console.log((d3.mouse(this)[0] < 1100 ? 5 : -20))
+    selectedData = data[i]
+    var formatTime = d3.timeFormat("%m/%d");
+    focusCases
+      .attr("cx", x(selectedData.date))
+      .attr("cy", yleft(selectedData.new_cases_7day_average))
+    focusTextCases
+      .html("New cases: " + selectedData.new_cases_7day_average + " Date: " + formatTime(selectedData.date))
+      .attr("x", x(selectedData.date) - (d3.mouse(this)[0] < 900 ? 5 : 200))
+      .attr("y", yleft(selectedData.new_cases_7day_average) - 20)
+    focusVaccines
+      .attr("cx", x(selectedData.date))
+      .attr("cy", yright(selectedData.new_vaccinations_7day_average))
+    focusTextVaccines
+      .html("New vaccines: " + selectedData.new_vaccinations_7day_average + " Date: " + formatTime(selectedData.date))
+      .attr("x", x(selectedData.date) - (d3.mouse(this)[0] < 900 ? 5 : 200))
+      .attr("y", yright(selectedData.new_vaccinations_7day_average) - 20)
+    }
+  function mouseout() {
+    focusCases.style("opacity", 0)
+    focusTextCases.style("opacity", 0)
+    focusVaccines.style("opacity", 0)
+    focusTextVaccines.style("opacity", 0)
+  }
+
+  }
+)
+}
+
+
+
+update('Current','Global')
 </script>
 </body>
-</html>
