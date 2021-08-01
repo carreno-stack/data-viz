@@ -687,7 +687,8 @@ d3.csv("https://raw.githubusercontent.com/carreno-stack/data-viz/main/covid_viz.
       //.style("top",yleft(selectedData.new_cases_7day_average) - 20)
       .html("New cases: " + selectedData.new_cases_7day_average + " Date: " + formatTime(selectedData.date))
       .attr("x", x(selectedData.date) - (d3.mouse(this)[0] < 900 ? 5 : 200))
-      .attr("y", yleft(selectedData.new_cases_7day_average) - 20)
+      .attr("y", yleft(selectedData.new_cases_7day_average) - (scene_no == 1 && d3.mouse(this)[0] < 430 ? 40 : 40-20*(Math.min((d3.mouse(this)[0]-430)/70,1))))
+    console.log(40-20*(Math.min((d3.mouse(this)[0]-450)/50,1)))
     focusVaccines
       .attr("cx", x(selectedData.date))
       .attr("cy", yright(selectedData.new_vaccinations_7day_average))
